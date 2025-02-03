@@ -1,5 +1,5 @@
 // BulletManager.js
-import { MAX_BULLETS } from "./constants.js";
+import { MAX_BULLETS } from "../core/constants.js";
 
 export class BulletManager {
   constructor(game) {
