@@ -1,3 +1,231 @@
+#mobileControls {
+  position: fixed;
+  z-index: 1000;
+  display: none; /* 기본적으로 숨김 */
+  pointer-events: none; /* 기본적으로 터치 이벤트 무시 */
+}
+
+/* 스킬 버튼 스타일 */
+.skill-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #ffd700;
+  color: #ffd700;
+  padding: 15px 25px;
+  border-radius: 25px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  pointer-events: auto; /* 버튼은 터치 가능 */
+}
+
+/* 조이스틱 스타일 */
+#joystickArea {
+  position: fixed;
+  bottom: 50px;
+  left: 50px;
+  width: 150px;
+  height: 150px;
+  pointer-events: auto; /* 조이스틱은 터치 가능 */
+}
+
+#joystickBase {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  display: none; /* 터치 시에만 표시 */
+}
+
+#joystickHandle {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  top: 25px;
+  left: 25px;
+  cursor: pointer;
+}
+
+/* 모바일 스킬 선택 UI */
+.mobile-skill-select {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 20px;
+  border-radius: 15px;
+  width: 80%;
+  max-width: 400px;
+  z-index: 1000;
+}
+
+.mobile-skill-option {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-skill-option .skill-icon {
+  font-size: 24px;
+}
+
+.mobile-skill-option .skill-name {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.mobile-skill-option .skill-description {
+  font-size: 14px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.mobile-skill-option:active {
+  background: rgba(255, 215, 0, 0.3);
+}
+
+/* 모바일 상점 UI */
+.mobile-shop {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 20px;
+  border-radius: 15px;
+  width: 80%;
+  max-width: 400px;
+  z-index: 1000;
+}
+
+.mobile-shop-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-shop-item .item-icon {
+  font-size: 24px;
+}
+
+.mobile-shop-item .item-name {
+  flex: 1;
+  margin: 0 15px;
+  font-size: 16px;
+}
+
+.mobile-shop-item .item-cost {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.mobile-shop-item:active {
+  background: rgba(255, 215, 0, 0.3);
+}
+
+.mobile-shop-close {
+  width: 100%;
+  padding: 15px;
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.mobile-shop-close:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 조이스틱 스타일 개선 */
+#joystickArea {
+  position: fixed;
+  bottom: 50px;
+  left: 50px;
+  width: 150px;
+  height: 150px;
+  pointer-events: auto;
+  z-index: 1000;
+}
+
+#joystickBase {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: none;
+  backdrop-filter: blur(5px);
+}
+
+#joystickHandle {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  top: 25px;
+  left: 25px;
+  backdrop-filter: blur(5px);
+}
+
+/* 차지 바 스타일 개선 */
+.charge-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(to right, #ffd700, #ff6b6b);
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+.skill-button.charging {
+  background: rgba(255, 215, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+  #mobileControls {
+    display: block;
+  }
+
+  .skill-button {
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+
+  #joystickArea {
+    bottom: 30px;
+    left: 30px;
+  }
+}
+
 .modal {
   display: none;
   position: fixed;

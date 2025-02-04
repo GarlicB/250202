@@ -6,6 +6,7 @@ export class BulletManager {
     this.game = game;
     this.playerBullets = [];
     this.enemyBullets = [];
+    this.lasers = [];
   }
 
   update(dt) {
@@ -31,6 +32,10 @@ export class BulletManager {
         bullet.vy = (bullet.vy / speed) * bullet.speed;
       }
     }
+    for (let laser of this.lasers) {
+      laser.life -= dt * 2;
+      if (laser.life <= 0) laser.remove = true;
+    }
     for (let bullet of this.enemyBullets) {
       bullet.x += bullet.vx * bullet.speed;
       bullet.y += bullet.vy * bullet.speed;
@@ -44,6 +49,7 @@ export class BulletManager {
     }
     this.playerBullets = this.playerBullets.filter((b) => !b.remove);
     this.enemyBullets = this.enemyBullets.filter((b) => !b.remove);
+    this.lasers = this.lasers.filter((l) => !l.remove);
   }
 
   spawnPlayerBullet(x, y, vx, vy, options = {}) {
@@ -75,37 +81,73 @@ export class BulletManager {
     });
   }
 
-  spawnHomingLaser(x, y, angle, damage, target) {
-    if (this.playerBullets.length >= MAX_BULLETS) return;
-    this.playerBullets.push({
-      x,
-      y,
-      vx: Math.cos(angle),
-      vy: Math.sin(angle),
-      speed: 15,
-      size: 12,
-      damage,
-      isHoming: true,
-      target,
-      trackingStrength: 0.1,
+  spawnLaser(x, y, angle, damage, options = {}) {
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+
+    const endX = x;
+    const endY = -100;
+
+    this.lasers.push({
+      startX: x,
+      startY: y,
+      endX: endX,
+      endY: endY,
+      angle: angle,
+      damage: damage,
+      life: options.life || 0.3,
+      maxLife: options.life || 0.3,
+      width: options.width || 12,
       remove: false,
     });
+
+    // 레이저 발사 파티클 효과
+    const particleCount = Math.floor(options.width || 12);
+    this.game.particleSystem.createExplosion(x, y, "#FFD700", particleCount);
   }
 
   draw(ctx) {
     ctx.save();
+
+    for (let laser of this.lasers) {
+      const alpha = laser.life / laser.maxLife;
+
+      ctx.strokeStyle = `rgba(255, 215, 0, ${alpha})`;
+      ctx.lineWidth = laser.width;
+      ctx.beginPath();
+      ctx.moveTo(laser.startX, laser.startY);
+      ctx.lineTo(laser.endX, laser.endY);
+      ctx.stroke();
+
+      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.7})`;
+      ctx.lineWidth = laser.width * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(laser.startX, laser.startY);
+      ctx.lineTo(laser.endX, laser.endY);
+      ctx.stroke();
+
+      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.lineWidth = laser.width * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(laser.startX, laser.startY);
+      ctx.lineTo(laser.endX, laser.endY);
+      ctx.stroke();
+    }
+
     for (let bullet of this.playerBullets) {
       ctx.fillStyle = bullet.color || "#fc6";
       ctx.beginPath();
       ctx.arc(bullet.x, bullet.y, bullet.size / 2, 0, Math.PI * 2);
       ctx.fill();
     }
+
     ctx.fillStyle = "#f66";
     for (let bullet of this.enemyBullets) {
       ctx.beginPath();
       ctx.arc(bullet.x, bullet.y, bullet.size / 2, 0, Math.PI * 2);
       ctx.fill();
     }
+
     ctx.restore();
   }
 }

@@ -31,6 +31,8 @@ export class Game {
     this.waveClear = false;
     this.introControls = document.getElementById("introControls");
     this.startGameBtn = document.getElementById("startGame");
+    this.mouseX = 0; // 마우스 X 좌표 추가
+    this.mouseY = 0; // 마우스 Y 좌표 추가
     this.setupEventListeners();
     this.resizeCanvas();
     this.drawGame();
@@ -52,6 +54,7 @@ export class Game {
     document.addEventListener("keydown", this.handleKeyDown.bind(this));
     document.addEventListener("keyup", this.handleKeyUp.bind(this));
     this.canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
+    this.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this)); // 마우스 이동 이벤트 추가
     this.startGameBtn.onclick = () => {
       this.startGame();
     };
@@ -485,7 +488,10 @@ export class Game {
     const key = e.key.toLowerCase();
 
     if (this.state === GameState.SHOP) {
-      this.shop.handleInput(e.key);
+      if (key === "tab") {
+        e.preventDefault();
+        this.state = GameState.PLAY;
+      }
       return;
     }
 
@@ -511,49 +517,7 @@ export class Game {
       return;
     }
 
-    if (this.state === GameState.OVER && key === " ") {
-      // 게임 재시작
-      this.state = GameState.PLAY;
-      this.wave = 1;
-      this.score = 0;
-      this.gems = 0;
-      this.player = new Player(this);
-      this.enemies = [];
-      this.bulletManager = new BulletManager(this);
-      this.itemManager = new ItemManager(this);
-      this.waveStarted = false;
-      this.waveClear = false;
-      this.waveTimer = 0;
-      this.enemySpawnTimer = 0;
-      return;
-    }
-
-    // 스킬 단축키 처리
     if (this.state === GameState.PLAY) {
-      switch (key) {
-        case "q":
-          if (document.getElementById("skill_regenAura")?.checked) {
-            this.player.activateSkill("regenAura");
-          }
-          return;
-        case "w":
-          if (document.getElementById("skill_homingLaser")?.checked) {
-            this.player.activateSkill("homingLaser");
-          }
-          return;
-        case "e":
-          if (document.getElementById("skill_chainLightning")?.checked) {
-            this.player.activateSkill("chainLightning");
-          }
-          return;
-        case "r":
-          if (document.getElementById("skill_meteorShower")?.checked) {
-            this.player.activateSkill("meteorShower");
-          }
-          return;
-      }
-
-      // 방향키만 사용
       switch (key) {
         case "arrowleft":
           this.player.keyState.left = true;
@@ -567,9 +531,21 @@ export class Game {
         case "arrowdown":
           this.player.keyState.down = true;
           break;
+        case "w":
+          this.player.keyState.laser = true;
+          break;
         case "tab":
           e.preventDefault();
           this.state = GameState.SHOP;
+          break;
+        case "o":
+          // 모달이 열려있으면 닫고, 닫혀있으면 엽니다
+          const modalElement = document.getElementById("optionsModal");
+          if (modalElement.style.display === "block") {
+            this.optionsModal.close();
+          } else {
+            this.optionsModal.open();
+          }
           break;
       }
     }
@@ -577,8 +553,6 @@ export class Game {
 
   handleKeyUp(e) {
     const key = e.key.toLowerCase();
-
-    // 방향키만 처리
     switch (key) {
       case "arrowleft":
         this.player.keyState.left = false;
@@ -592,6 +566,10 @@ export class Game {
       case "arrowdown":
         this.player.keyState.down = false;
         break;
+      case "w":
+        this.player.keyState.laser = false;
+        this.player.fireLaser(); // W키를 떼면 레이저 발사
+        break;
     }
   }
 
@@ -599,7 +577,14 @@ export class Game {
     /* 추가 마우스 이벤트 처리 */
   }
 
+  handleMouseMove(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    this.mouseX = e.clientX - rect.left;
+    this.mouseY = e.clientY - rect.top;
+  }
+
   checkCollisions() {
+    // 일반 총알 충돌 체크
     for (let bullet of this.bulletManager.playerBullets) {
       for (let enemy of this.enemies) {
         if (enemy.dead) continue;
@@ -610,6 +595,24 @@ export class Game {
         }
       }
     }
+
+    // 레이저 충돌 체크
+    for (let laser of this.bulletManager.lasers) {
+      for (let enemy of this.enemies) {
+        if (enemy.dead) continue;
+        // 레이저는 수직으로 발사되므로 x 좌표가 비슷하고 y 좌표가 레이저 범위 안에 있는지 확인
+        if (
+          Math.abs(enemy.x - laser.startX) < enemy.size + laser.width / 2 &&
+          enemy.y < laser.startY &&
+          enemy.y > laser.endY
+        ) {
+          enemy.takeDamage(laser.damage);
+          enemy.hitByLaser(); // 레이저 피격 효과 추가
+        }
+      }
+    }
+
+    // 적 총알 충돌 체크
     for (let bullet of this.bulletManager.enemyBullets) {
       const dist = this.distance(
         bullet.x,
@@ -622,6 +625,8 @@ export class Game {
         bullet.remove = true;
       }
     }
+
+    // 적과 플레이어 충돌 체크
     for (let enemy of this.enemies) {
       if (enemy.dead) continue;
       const dist = this.distance(
@@ -630,7 +635,9 @@ export class Game {
         this.player.x,
         this.player.y
       );
-      if (dist < enemy.size + this.player.radius) this.player.takeDamage(1);
+      if (dist < enemy.size + this.player.radius) {
+        this.player.takeDamage(1);
+      }
     }
   }
 
