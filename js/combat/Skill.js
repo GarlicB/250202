@@ -18,12 +18,15 @@ export class Skill {
     switch (this.type) {
       case SkillType.REGEN_AURA:
         this.cooldown = 8;
-        this.duration = 5;
-        this.range = 200;
-        this.healAmount = 2;
+        this.duration = 1.5;
+        this.healAmount = 20;
+        this.range = 40;
         this.pulseInterval = 0.5;
         this.pulseTimer = 0;
-        this.shieldAmount = 1;
+        this.shieldAmount = 5;
+        this.crossFadeTimer = 0;
+        this.crossFadeDuration = 0.4;
+        this.particleColors = ["#4f4", "#2f2", "#0f0", "#0a0"];
         break;
       case SkillType.HOMING_LASER:
         this.cooldown = 3;
@@ -101,31 +104,96 @@ export class Skill {
     }
   }
   updateRegenAura(dt) {
-    if (this.game.player.hp < this.game.player.maxHp)
+    // 힐링 효과
+    if (this.game.player.hp < this.game.player.maxHp) {
+      const healingAmount = this.healAmount * dt;
       this.game.player.hp = Math.min(
-        this.game.player.hp + this.healAmount * dt,
+        this.game.player.hp + healingAmount,
         this.game.player.maxHp
       );
+
+      // 십자가 이펙트 (customDraw 사용)
+      if (Math.random() < dt * 5) {
+        this.crossFadeTimer = this.crossFadeDuration;
+        this.drawHealingCross();
+      }
+
+      // 십자가 페이드 아웃 업데이트
+      if (this.crossFadeTimer > 0) {
+        this.crossFadeTimer = Math.max(0, this.crossFadeTimer - dt);
+        this.drawHealingCross();
+      }
+    }
+
+    // 보호막 파동 효과
     this.pulseTimer += dt;
     if (this.pulseTimer >= this.pulseInterval) {
       this.pulseTimer = 0;
-      for (let i = 0; i < 12; i++) {
-        const angle = (i / 12) * Math.PI * 2;
-        const distance = this.range;
-        const x = this.game.player.x + Math.cos(angle) * distance;
-        const y = this.game.player.y + Math.sin(angle) * distance;
-        this.game.effectManager.createHealEffect(x, y);
+
+      // 원형 파동 생성 (개수 감소)
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const x = this.game.player.x + Math.cos(angle) * this.range;
+        const y = this.game.player.y + Math.sin(angle) * this.range;
+
+        // 메인 파동
+        this.game.particleSystem.createExplosion(x, y, "#4f4", 2, {
+          speed: 0,
+          scale: 1.2,
+        });
+
+        // 글로우 효과 (8개마다 1개)
+        if (i % 8 === 0) {
+          this.game.particleSystem.createExplosion(x, y, "#8f8", 1, {
+            speed: 3,
+            scale: 0.8,
+          });
+        }
       }
+
+      // 중앙 폭발 효과 (개수 감소)
+      for (let i = 0; i < 4; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = this.range * 0.15;
+        this.game.particleSystem.createExplosion(
+          this.game.player.x + Math.cos(angle) * distance,
+          this.game.player.y + Math.sin(angle) * distance,
+          "#4f4",
+          2,
+          {
+            speed: 15,
+            direction: angle,
+            scale: 1,
+          }
+        );
+      }
+
+      // 보호막 효과 적용
       this.game.player.addShield(this.shieldAmount);
     }
-    if (Math.random() < dt * 5) {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * this.range;
-      this.game.effectManager.createHealEffect(
-        this.game.player.x + Math.cos(angle) * distance,
-        this.game.player.y + Math.sin(angle) * distance
-      );
-    }
+  }
+  drawHealingCross() {
+    const ctx = this.game.ctx;
+    const x = this.game.player.x;
+    const y = this.game.player.y;
+    const size = 30;
+    const alpha = this.crossFadeTimer / this.crossFadeDuration;
+
+    ctx.save();
+    ctx.strokeStyle = `rgba(0, 255, 0, ${alpha})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    // 수직선
+    ctx.moveTo(x, y - size / 2);
+    ctx.lineTo(x, y + size / 2);
+
+    // 수평선
+    ctx.moveTo(x - size / 2, y);
+    ctx.lineTo(x + size / 2, y);
+
+    ctx.stroke();
+    ctx.restore();
   }
   updateHomingLaser(dt) {
     // 색상 변경 로직

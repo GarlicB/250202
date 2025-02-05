@@ -487,6 +487,17 @@ export class Game {
   handleKeyDown(e) {
     const key = e.key.toLowerCase();
 
+    // 게임 시작/재시작 처리
+    if (key === " ") {
+      if (this.state === GameState.TITLE || this.state === GameState.INTRO) {
+        this.startGame();
+        return;
+      } else if (this.state === GameState.OVER) {
+        this.restartGame();
+        return;
+      }
+    }
+
     if (this.state === GameState.SHOP) {
       if (key === "tab") {
         e.preventDefault();
@@ -545,6 +556,11 @@ export class Game {
             this.optionsModal.close();
           } else {
             this.optionsModal.open();
+          }
+          break;
+        case "q":
+          if (this.player.skills.regenAura) {
+            this.player.skills.regenAura.activate();
           }
           break;
       }
@@ -691,5 +707,28 @@ export class Game {
   showBossQuote(bossData) {
     this.bossQuote = bossData;
     this.bossQuoteTimer = 3; // 3초 동안 표시
+  }
+
+  restartGame() {
+    // 게임 상태 초기화
+    this.state = GameState.PLAY;
+    this.wave = 1;
+    this.waveTimer = 0;
+    this.enemySpawnTimer = 0;
+    this.waveStarted = false;
+    this.waveClear = false;
+    this.score = 0;
+    this.gems = 0;
+
+    // 플레이어 초기화
+    this.player = new Player(this);
+
+    // 적, 총알 초기화
+    this.enemies = [];
+    this.bulletManager.clear();
+
+    // 게임 루프 재시작
+    this.lastTime = performance.now();
+    requestAnimationFrame(this.gameLoop.bind(this));
   }
 }
