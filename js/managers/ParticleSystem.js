@@ -5,7 +5,6 @@ export class ParticleSystem {
     this.game = game;
     this.particles = [];
   }
-
   update(dt) {
     this.particles = this.particles.filter((particle) => {
       particle.update(dt);
@@ -14,25 +13,24 @@ export class ParticleSystem {
     if (this.particles.length > MAX_PARTICLES)
       this.particles.length = MAX_PARTICLES;
   }
-
   draw(ctx) {
     for (let particle of this.particles) particle.draw(ctx);
   }
-
-  createExplosion(x, y, color = "#f66", count = 20) {
+  createExplosion(x, y, color = "#f66", count = 20, opts = {}) {
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 * i) / count,
         speed = 100 + Math.random() * 100;
       this.particles.push({
         x,
         y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        size: 3 + Math.random() * 3,
+        vx: Math.cos(angle) * speed * (opts.speed || 1),
+        vy: Math.sin(angle) * speed * (opts.speed || 1),
+        size: (opts.scale || 1) * (3 + Math.random() * 3),
         color,
         alpha: 1,
         life: 0.5 + Math.random() * 0.5,
         finished: false,
+        direction: opts.direction || null,
         update(dt) {
           this.x += this.vx * dt;
           this.y += this.vy * dt;
@@ -53,7 +51,6 @@ export class ParticleSystem {
       });
     }
   }
-
   createHitEffect(x, y) {
     for (let i = 0; i < 5; i++) {
       const angle = Math.random() * Math.PI * 2,
@@ -87,7 +84,6 @@ export class ParticleSystem {
       });
     }
   }
-
   createTrail(x, y, color = "#4af") {
     this.particles.push({
       x,
@@ -114,7 +110,6 @@ export class ParticleSystem {
       },
     });
   }
-
   createLevelUpEffect(x, y) {
     const colors = ["#4af", "#ff4", "#f4f", "#4f4"];
     for (let i = 0; i < 40; i++) {

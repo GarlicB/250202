@@ -43,7 +43,6 @@ export class Item {
         break;
     }
   }
-
   update(dt) {
     if (this.collected) return;
     this.y += this.vy;
@@ -67,7 +66,6 @@ export class Item {
       this.applyEffect();
     }
   }
-
   draw(ctx) {
     if (this.collected) return;
     ctx.save();
@@ -77,7 +75,6 @@ export class Item {
     ctx.fill();
     ctx.restore();
   }
-
   applyEffect() {
     switch (this.type) {
       case ItemType.COIN:

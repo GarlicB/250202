@@ -142,11 +142,19 @@
 
     <!-- 모바일 컨트롤 UI -->
     <div id="mobileControls">
-      <!-- 레이저 스킬 버튼 -->
-      <button id="laserSkillBtn" class="skill-button">
+      <!-- Q 스킬 버튼 (회복 오라) -->
+      <button id="qSkillBtn" class="skill-button skill-button-left">
+        <span class="skill-icon">💚</span>
+        Q
+        <div class="cooldown-overlay"></div>
+      </button>
+
+      <!-- W 스킬 버튼 (차지 공격) -->
+      <button id="wSkillBtn" class="skill-button skill-button-left">
         <span class="skill-icon">🎯</span>
-        레이저
+        W
         <div class="charge-bar"></div>
+        <div class="cooldown-overlay"></div>
       </button>
 
       <!-- 가상 조이스틱 -->
@@ -155,236 +163,6 @@
         <div id="joystickHandle"></div>
       </div>
     </div>
-
-    <style>
-      /* 게임 시작 버튼 스타일 수정 */
-      #introControls {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 2000; /* 조이스틱보다 위에 표시 */
-        pointer-events: auto;
-      }
-
-      .game-button {
-        background: rgba(0, 0, 0, 0.8);
-        color: #ffd700;
-        border: 2px solid #ffd700;
-        padding: 15px 30px;
-        font-size: 24px;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.3s;
-        pointer-events: auto;
-      }
-
-      .game-button:hover {
-        background: rgba(255, 215, 0, 0.2);
-      }
-
-      /* 조이스틱 영역 수정 */
-      #joystickArea {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 70%;
-        background: transparent;
-        touch-action: none;
-        z-index: 1000;
-        display: none; /* 게임 시작 전에는 숨김 */
-      }
-
-      #mobileControls {
-        position: fixed;
-        z-index: 1000;
-        display: none;
-        pointer-events: none;
-      }
-
-      @media (max-width: 768px) {
-        #mobileControls {
-          display: block;
-        }
-
-        #joystickArea {
-          display: block; /* 모바일에서만 표시 */
-        }
-
-        .game-button {
-          font-size: 20px;
-          padding: 12px 24px;
-        }
-      }
-
-      /* 스킬 버튼 스타일 */
-      .skill-button {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.6);
-        border: 2px solid #ffd700;
-        color: #ffd700;
-        padding: 15px 25px;
-        border-radius: 25px;
-        font-size: 20px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: all 0.3s;
-        pointer-events: auto; /* 버튼은 터치 가능 */
-      }
-
-      /* 조이스틱 스타일 */
-      #joystickBase {
-        position: fixed;
-        width: 100px;
-        height: 100px;
-        background: rgba(255, 255, 255, 0.15);
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        backdrop-filter: blur(5px);
-        display: none;
-      }
-
-      #joystickHandle {
-        position: fixed;
-        width: 50px;
-        height: 50px;
-        background: rgba(255, 255, 255, 0.4);
-        border: 2px solid rgba(255, 255, 255, 0.6);
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        backdrop-filter: blur(5px);
-        display: none;
-      }
-
-      /* 모바일 스킬 선택 UI */
-      .mobile-skill-select {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.9);
-        padding: 20px;
-        border-radius: 15px;
-        width: 80%;
-        max-width: 400px;
-        z-index: 1000;
-      }
-
-      .mobile-skill-option {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 15px;
-        margin: 10px 0;
-        border-radius: 10px;
-        color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .mobile-skill-option .skill-icon {
-        font-size: 24px;
-      }
-
-      .mobile-skill-option .skill-name {
-        font-size: 18px;
-        font-weight: bold;
-      }
-
-      .mobile-skill-option .skill-description {
-        font-size: 14px;
-        opacity: 0.8;
-        margin: 0;
-      }
-
-      .mobile-skill-option:active {
-        background: rgba(255, 215, 0, 0.3);
-      }
-
-      /* 모바일 상점 UI */
-      .mobile-shop {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.9);
-        padding: 20px;
-        border-radius: 15px;
-        width: 80%;
-        max-width: 400px;
-        z-index: 1000;
-      }
-
-      .mobile-shop-item {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 15px;
-        margin: 10px 0;
-        border-radius: 10px;
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .mobile-shop-item .item-icon {
-        font-size: 24px;
-      }
-
-      .mobile-shop-item .item-name {
-        flex: 1;
-        margin: 0 15px;
-        font-size: 16px;
-      }
-
-      .mobile-shop-item .item-cost {
-        color: #ffd700;
-        font-weight: bold;
-      }
-
-      .mobile-shop-item:active {
-        background: rgba(255, 215, 0, 0.3);
-      }
-
-      .mobile-shop-close {
-        width: 100%;
-        padding: 15px;
-        margin-top: 20px;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        border-radius: 10px;
-        color: white;
-        font-size: 16px;
-        cursor: pointer;
-      }
-
-      .mobile-shop-close:active {
-        background: rgba(255, 255, 255, 0.3);
-      }
-
-      /* 차지 바 스타일 개선 */
-      .charge-bar {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        height: 4px;
-        width: 0%;
-        background: linear-gradient(to right, #ffd700, #ff6b6b);
-        border-radius: 2px;
-        transition: width 0.1s linear;
-      }
-
-      .skill-button.charging {
-        background: rgba(255, 215, 0, 0.2);
-      }
-    </style>
 
     <script type="module">
       import { Game } from "./js/core/Game.js";

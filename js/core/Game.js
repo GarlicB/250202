@@ -13,6 +13,8 @@ import { ItemManager } from "../managers/ItemManager.js";
 import { EffectManager } from "../managers/EffectManager.js";
 import { ParticleSystem } from "../managers/ParticleSystem.js";
 import { Shop } from "../ui/Shop.js";
+import { MobileControls } from "../ui/MobileControls.js";
+import { SkillUpgrades } from "../core/constants.js";
 
 export class Game {
   constructor() {
@@ -31,9 +33,8 @@ export class Game {
     this.waveClear = false;
     this.introControls = document.getElementById("introControls");
     this.startGameBtn = document.getElementById("startGame");
-    this.mouseX = 0; // 마우스 X 좌표 추가
-    this.mouseY = 0; // 마우스 Y 좌표 추가
-    this.setupEventListeners();
+    this.mouseX = 0;
+    this.mouseY = 0;
     this.resizeCanvas();
     this.drawGame();
     this.player = new Player(this);
@@ -45,35 +46,93 @@ export class Game {
     this.shop = new Shop(this);
     this.score = 0;
     this.gems = 0;
-    this.customBgColor = null; // 사용자 지정 배경 색상 (옵션 적용 시 사용)
+    this.customBgColor = null;
+    this.optionsModal = new Modal("optionsModal");
+    this.mobileControls = new MobileControls(this);
+    this.skillSelectUI = {
+      selectedIndex: 0,
+      boxes: [],
+      isMobile: true,
+    };
+    this.setupTouchEvents();
     this.setupOptionsModal();
-  }
-
-  setupEventListeners() {
     window.addEventListener("resize", this.resizeCanvas.bind(this));
-    document.addEventListener("keydown", this.handleKeyDown.bind(this));
-    document.addEventListener("keyup", this.handleKeyUp.bind(this));
-    this.canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
-    this.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this)); // 마우스 이동 이벤트 추가
-    this.startGameBtn.onclick = () => {
+    this.startGameBtn.ontouchstart = () => {
       this.startGame();
     };
   }
-
+  setupTouchEvents() {
+    this.canvas.addEventListener(
+      "touchstart",
+      (e) => {
+        if (!e.touches[0]) return;
+        const rect = this.canvas.getBoundingClientRect();
+        const scale = this.canvas.width / rect.width;
+        const x = (e.touches[0].clientX - rect.left) * scale;
+        const y = (e.touches[0].clientY - rect.top) * scale;
+        if (this.state === GameState.SKILL_SELECT) {
+          this.handleSkillSelectTouch(x, y);
+        }
+      },
+      { passive: false }
+    );
+    this.canvas.addEventListener(
+      "touchmove",
+      (e) => {
+        if (!e.touches[0]) return;
+        const rect = this.canvas.getBoundingClientRect();
+        const scale = this.canvas.width / rect.width;
+        const x = (e.touches[0].clientX - rect.left) * scale;
+        const y = (e.touches[0].clientY - rect.top) * scale;
+        if (this.state === GameState.SKILL_SELECT) {
+          this.handleSkillSelectTouch(x, y);
+        }
+      },
+      { passive: false }
+    );
+    this.canvas.addEventListener(
+      "touchend",
+      () => {
+        if (this.state === GameState.SKILL_SELECT) {
+          const selectedBox =
+            this.skillSelectUI.boxes[this.skillSelectUI.selectedIndex];
+          if (selectedBox) {
+            this.selectSkill(this.skillSelectUI.selectedIndex);
+            if (navigator.vibrate) navigator.vibrate(50);
+          }
+        }
+      },
+      { passive: false }
+    );
+  }
+  handleSkillSelectTouch(x, y) {
+    let touched = false;
+    this.skillSelectUI.boxes.forEach((box, index) => {
+      if (
+        x >= box.x &&
+        x <= box.x + box.width &&
+        y >= box.y &&
+        y <= box.y + box.height
+      ) {
+        this.skillSelectUI.selectedIndex = index;
+        touched = true;
+      }
+    });
+    return touched;
+  }
   resizeCanvas() {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
     this.drawGame();
   }
-
   startGame() {
     this.state = GameState.PLAY;
     this.waveTitleTimer = 2;
     this.lastTime = performance.now();
     this.introControls.style.display = "none";
+    this.updateMobileControlsVisibility();
     requestAnimationFrame(this.gameLoop.bind(this));
   }
-
   gameLoop(timestamp) {
     const dt = Math.min((timestamp - this.lastTime) / 1000, 0.1);
     this.lastTime = timestamp;
@@ -81,12 +140,10 @@ export class Game {
     this.drawGame();
     requestAnimationFrame(this.gameLoop.bind(this));
   }
-
   update(dt) {
     if (this.state === GameState.TITLE) this.updateStory(dt);
     else if (this.state === GameState.PLAY) this.updateGame(dt);
   }
-
   updateStory(dt) {
     if (this.storyIndex < STORY_TEXT.length) {
       this.storyTimer += dt;
@@ -98,7 +155,6 @@ export class Game {
       }
     }
   }
-
   updateGame(dt) {
     this.player.update(dt);
     this.bulletManager.update(dt);
@@ -109,7 +165,6 @@ export class Game {
     this.updateWave(dt);
     this.particleSystem.update(dt);
   }
-
   updateWave(dt) {
     if (this.state !== GameState.PLAY) return;
     this.waveTimer += dt;
@@ -127,7 +182,6 @@ export class Game {
     }
     this.spawnEnemies();
   }
-
   startWave() {
     this.waveStarted = true;
     this.waveClear = false;
@@ -136,7 +190,6 @@ export class Game {
     this.waveTitleTimer = 2;
     if (this.wave % WaveSystem.BOSS_WAVE_INTERVAL === 0) this.spawnBoss();
   }
-
   clearWave() {
     this.wave++;
     this.waveStarted = false;
@@ -146,7 +199,6 @@ export class Game {
       bonus = Math.floor(this.wave / 5);
     this.addGems(baseReward + bonus);
   }
-
   spawnEnemies() {
     const spawnInterval = Math.max(1 - (this.wave - 1) * 0.1, 0.3);
     if (this.enemySpawnTimer >= spawnInterval) {
@@ -155,7 +207,6 @@ export class Game {
       else this.spawnNormalEnemy();
     }
   }
-
   spawnNormalEnemy() {
     if (this.enemies.length >= MAX_ENEMIES) return;
     const enemy = new Enemy(this, "normal");
@@ -163,7 +214,6 @@ export class Game {
     enemy.maxHp = enemy.hp;
     this.enemies.push(enemy);
   }
-
   spawnMiniBoss() {
     if (this.enemies.length >= MAX_ENEMIES) return;
     const enemy = new Enemy(this, "miniBoss");
@@ -171,24 +221,19 @@ export class Game {
     enemy.maxHp = enemy.hp;
     this.enemies.push(enemy);
   }
-
   spawnBoss() {
     const boss = new Enemy(this, "boss");
     boss.hp *= Math.pow(WaveSystem.DIFFICULTY_SCALE, this.wave - 1);
     boss.maxHp = boss.hp;
     this.enemies.push(boss);
-
-    // 보스 등장 연출 추가
     if (BOSS_QUOTES[this.wave]) {
       this.showBossQuote(BOSS_QUOTES[this.wave]);
     }
   }
-
   updateEnemies(dt) {
     this.enemies = this.enemies.filter((enemy) => !enemy.dead);
     for (let enemy of this.enemies) enemy.update(dt);
   }
-
   drawGame() {
     this.drawBackground();
     if (this.state === GameState.TITLE) {
@@ -206,11 +251,10 @@ export class Game {
     } else if (this.state === GameState.SHOP) {
       this.shop.draw(this.ctx);
     } else if (this.state === GameState.SKILL_SELECT) {
-      this.drawPlayScreen(); // 배경으로 게임 화면을 그림
+      this.drawPlayScreen();
       this.drawSkillSelectScreen();
     }
   }
-
   drawBackground() {
     if (this.customBgColor) {
       this.ctx.fillStyle = this.customBgColor;
@@ -219,7 +263,6 @@ export class Game {
       this.wave % WaveSystem.BOSS_WAVE_INTERVAL === 0 &&
       this.waveStarted
     ) {
-      // 보스 웨이브일 때 붉은 그라데이션 배경
       const grd = this.ctx.createRadialGradient(
         this.canvas.width / 2,
         this.canvas.height / 2,
@@ -232,8 +275,6 @@ export class Game {
       grd.addColorStop(1, "#000000");
       this.ctx.fillStyle = grd;
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-      // 추가: 붉은 파티클 효과 (리소스 절감을 위해 particle 수 낮춤)
       if (Math.random() < 0.1) {
         this.particleSystem.createExplosion(
           Math.random() * this.canvas.width,
@@ -243,10 +284,8 @@ export class Game {
         );
       }
     } else {
-      // 일반 웨이브: 동적인 별빛 배경을 캐싱하여 매 프레임마다 새로 계산하지 않음
       this.ctx.fillStyle = "#111";
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
       if (!this.starField) {
         this.starField = [];
         for (let i = 0; i < 50; i++) {
@@ -258,7 +297,6 @@ export class Game {
           });
         }
       }
-
       this.ctx.fillStyle = "#fff";
       for (let star of this.starField) {
         this.ctx.globalAlpha = star.alpha;
@@ -269,7 +307,6 @@ export class Game {
       this.ctx.globalAlpha = 1;
     }
   }
-
   drawTitleScreen() {
     this.ctx.save();
     this.ctx.fillStyle = "#fff";
@@ -290,7 +327,6 @@ export class Game {
     }
     this.ctx.restore();
   }
-
   drawPlayScreen() {
     this.player.draw(this.ctx);
     this.bulletManager.draw(this.ctx);
@@ -299,8 +335,6 @@ export class Game {
     this.effectManager.draw(this.ctx);
     this.particleSystem.draw(this.ctx);
     this.drawHUD();
-
-    // 보스 대사 표시
     if (this.bossQuote && this.bossQuoteTimer > 0) {
       this.ctx.save();
       this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -310,7 +344,6 @@ export class Game {
         this.canvas.width,
         200
       );
-
       this.ctx.fillStyle = "#ff4444";
       this.ctx.font = "bold 36px Arial";
       this.ctx.textAlign = "center";
@@ -319,7 +352,6 @@ export class Game {
         this.canvas.width / 2,
         this.canvas.height / 2 - 20
       );
-
       this.ctx.fillStyle = "#ffffff";
       this.ctx.font = "24px Arial";
       this.ctx.fillText(
@@ -327,17 +359,14 @@ export class Game {
         this.canvas.width / 2,
         this.canvas.height / 2 + 20
       );
-
       this.ctx.restore();
       this.bossQuoteTimer -= 1 / 60;
     }
   }
-
   drawLevelUpScreen() {
     this.ctx.save();
     this.ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
     this.ctx.fillStyle = "#fff";
     this.ctx.font = "bold 48px Arial";
     this.ctx.textAlign = "center";
@@ -348,15 +377,12 @@ export class Game {
       this.canvas.width / 2,
       this.canvas.height / 2
     );
-
     this.ctx.restore();
   }
-
   drawGameOverScreen() {
     this.ctx.save();
     this.ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
     this.ctx.fillStyle = "#fff";
     this.ctx.font = "bold 60px Arial";
     this.ctx.textAlign = "center";
@@ -367,7 +393,6 @@ export class Game {
       this.canvas.width / 2,
       this.canvas.height / 2 - 50
     );
-
     this.ctx.font = "30px Arial";
     this.ctx.shadowBlur = 10;
     this.ctx.fillText(
@@ -380,17 +405,8 @@ export class Game {
       this.canvas.width / 2,
       this.canvas.height / 2 + 70
     );
-
-    this.ctx.font = "20px Arial";
-    this.ctx.fillText(
-      "스페이스바를 눌러 다시 시작",
-      this.canvas.width / 2,
-      this.canvas.height / 2 + 150
-    );
-
     this.ctx.restore();
   }
-
   drawHUD() {
     this.ctx.save();
     this.ctx.fillStyle = "#fff";
@@ -423,184 +439,102 @@ export class Game {
         this.canvas.height / 2
       );
       this.ctx.restore();
-      this.waveTitleTimer -= 1 / 60; // Assume 60fps
+      this.waveTitleTimer -= 1 / 60;
     }
     this.ctx.restore();
   }
-
   drawSkillSelectScreen() {
     this.ctx.save();
-    // 반투명한 검은색 오버레이
-    this.ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // 제목
     this.ctx.fillStyle = "#fff";
     this.ctx.font = "bold 40px Arial";
     this.ctx.textAlign = "center";
     this.ctx.fillText("스킬 선택", this.canvas.width / 2, 150);
-
-    // 스킬 선택지 표시
     const startY = 250;
     const spacing = 120;
-
+    this.skillSelectUI.boxes = [];
     if (this.skillChoices && this.skillChoices.length > 0) {
       this.skillChoices.forEach((skill, index) => {
         const y = startY + spacing * index;
-        const isHovered = this.skillHoverIndex === index;
-
-        // 선택지 배경
-        this.ctx.fillStyle = isHovered
-          ? "rgba(100, 200, 255, 0.3)"
-          : "rgba(50, 50, 50, 0.7)";
-        this.ctx.fillRect(
-          this.canvas.width / 4,
-          y - 40,
-          this.canvas.width / 2,
-          100
+        const isSelected = this.skillSelectUI.selectedIndex === index;
+        const boxWidth = this.canvas.width * 0.7;
+        const boxHeight = 100;
+        const boxX = (this.canvas.width - boxWidth) / 2;
+        const boxY = y - 40;
+        this.skillSelectUI.boxes.push({
+          x: boxX,
+          y: boxY,
+          width: boxWidth,
+          height: boxHeight,
+        });
+        const gradient = this.ctx.createLinearGradient(
+          boxX,
+          boxY,
+          boxX + boxWidth,
+          boxY
         );
-
-        // 스킬 이름
-        this.ctx.fillStyle = isHovered ? "#4af" : "#fff";
-        this.ctx.font = "bold 24px Arial";
+        if (isSelected) {
+          gradient.addColorStop(0, "rgba(100, 200, 255, 0.6)");
+          gradient.addColorStop(1, "rgba(100, 200, 255, 0.4)");
+        } else {
+          gradient.addColorStop(0, "rgba(50, 50, 50, 0.8)");
+          gradient.addColorStop(1, "rgba(50, 50, 50, 0.6)");
+        }
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+        if (isSelected) {
+          this.ctx.shadowColor = "#4af";
+          this.ctx.shadowBlur = 15;
+          this.ctx.strokeStyle = "#4af";
+          this.ctx.lineWidth = 3;
+          this.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+          this.ctx.shadowBlur = 0;
+        }
+        this.ctx.fillStyle = isSelected ? "#fff" : "#aaa";
+        this.ctx.font = `bold 24px Arial`;
         this.ctx.fillText(skill.name, this.canvas.width / 2, y);
-
-        // 스킬 설명
-        this.ctx.fillStyle = "#aaa";
-        this.ctx.font = "18px Arial";
-        this.ctx.fillText(skill.description, this.canvas.width / 2, y + 30);
+        this.ctx.fillStyle = isSelected ? "#fff" : "#888";
+        this.ctx.font = `18px Arial`;
+        this.ctx.fillText(skill.description, this.canvas.width / 2, y + 35);
       });
-
-      // 조작 방법 안내 추가
       this.ctx.fillStyle = "#aaa";
-      this.ctx.font = "18px Arial";
+      this.ctx.font = `20px Arial`;
       this.ctx.fillText(
-        "↑↓: 선택  SPACE/ENTER: 확정",
+        "화면을 터치하여 스킬을 선택하세요",
         this.canvas.width / 2,
         this.canvas.height - 50
       );
     }
-
     this.ctx.restore();
   }
-
-  handleKeyDown(e) {
-    const key = e.key.toLowerCase();
-
-    // 게임 시작/재시작 처리
-    if (key === " ") {
-      if (this.state === GameState.TITLE || this.state === GameState.INTRO) {
-        this.startGame();
-        return;
-      } else if (this.state === GameState.OVER) {
-        this.restartGame();
-        return;
-      }
-    }
-
-    if (this.state === GameState.SHOP) {
-      if (key === "tab") {
-        e.preventDefault();
-        this.state = GameState.PLAY;
-      }
-      return;
-    }
-
-    if (this.state === GameState.SKILL_SELECT) {
-      switch (e.key) {
-        case "ArrowUp":
-          this.skillHoverIndex = Math.max(0, (this.skillHoverIndex || 0) - 1);
-          break;
-        case "ArrowDown":
-          this.skillHoverIndex = Math.min(2, (this.skillHoverIndex || 0) + 1);
-          break;
-        case " ":
-        case "Enter":
-          if (this.skillChoices && this.skillChoices[this.skillHoverIndex]) {
-            const selectedSkill = this.skillChoices[this.skillHoverIndex];
-            selectedSkill.effect(this.player);
-            this.state = GameState.PLAY;
-            this.skillChoices = null;
-            this.skillHoverIndex = 0;
-          }
-          break;
-      }
-      return;
-    }
-
-    if (this.state === GameState.PLAY) {
-      switch (key) {
-        case "arrowleft":
-          this.player.keyState.left = true;
-          break;
-        case "arrowright":
-          this.player.keyState.right = true;
-          break;
-        case "arrowup":
-          this.player.keyState.up = true;
-          break;
-        case "arrowdown":
-          this.player.keyState.down = true;
-          break;
-        case "w":
-          this.player.keyState.laser = true;
-          break;
-        case "tab":
-          e.preventDefault();
-          this.state = GameState.SHOP;
-          break;
-        case "o":
-          // 모달이 열려있으면 닫고, 닫혀있으면 엽니다
-          const modalElement = document.getElementById("optionsModal");
-          if (modalElement.style.display === "block") {
-            this.optionsModal.close();
-          } else {
-            this.optionsModal.open();
-          }
-          break;
-        case "q":
-          if (this.player.skills.regenAura) {
-            this.player.skills.regenAura.activate();
-          }
-          break;
-      }
+  selectSkill(index) {
+    if (this.skillChoices && this.skillChoices[index]) {
+      const selectedSkill = this.skillChoices[index];
+      selectedSkill.effect(this.player);
+      this.state = GameState.PLAY;
+      this.updateMobileControlsVisibility();
+      this.skillChoices = null;
+      this.skillSelectUI.selectedIndex = 0;
+      this.skillSelectUI.boxes = [];
     }
   }
-
-  handleKeyUp(e) {
-    const key = e.key.toLowerCase();
-    switch (key) {
-      case "arrowleft":
-        this.player.keyState.left = false;
-        break;
-      case "arrowright":
-        this.player.keyState.right = false;
-        break;
-      case "arrowup":
-        this.player.keyState.up = false;
-        break;
-      case "arrowdown":
-        this.player.keyState.down = false;
-        break;
-      case "w":
-        this.player.keyState.laser = false;
-        this.player.fireLaser(); // W키를 떼면 레이저 발사
-        break;
+  setSkillSelectState() {
+    this.state = GameState.SKILL_SELECT;
+    this.updateMobileControlsVisibility();
+  }
+  handleLevelUp() {
+    this.setSkillSelectState();
+    this.particleSystem.createLevelUpEffect(this.player.x, this.player.y);
+    const allSkills = [...Object.values(SkillUpgrades)];
+    this.skillChoices = [];
+    for (let i = 0; i < 3 && allSkills.length > 0; i++) {
+      const randomIndex = Math.floor(Math.random() * allSkills.length);
+      this.skillChoices.push(allSkills[randomIndex]);
+      allSkills.splice(randomIndex, 1);
     }
   }
-
-  handleMouseDown(e) {
-    /* 추가 마우스 이벤트 처리 */
-  }
-
-  handleMouseMove(e) {
-    const rect = this.canvas.getBoundingClientRect();
-    this.mouseX = e.clientX - rect.left;
-    this.mouseY = e.clientY - rect.top;
-  }
-
   checkCollisions() {
-    // 일반 총알 충돌 체크
     for (let bullet of this.bulletManager.playerBullets) {
       for (let enemy of this.enemies) {
         if (enemy.dead) continue;
@@ -611,24 +545,19 @@ export class Game {
         }
       }
     }
-
-    // 레이저 충돌 체크
     for (let laser of this.bulletManager.lasers) {
       for (let enemy of this.enemies) {
         if (enemy.dead) continue;
-        // 레이저는 수직으로 발사되므로 x 좌표가 비슷하고 y 좌표가 레이저 범위 안에 있는지 확인
         if (
           Math.abs(enemy.x - laser.startX) < enemy.size + laser.width / 2 &&
           enemy.y < laser.startY &&
           enemy.y > laser.endY
         ) {
           enemy.takeDamage(laser.damage);
-          enemy.hitByLaser(); // 레이저 피격 효과 추가
+          enemy.hitByLaser();
         }
       }
     }
-
-    // 적 총알 충돌 체크
     for (let bullet of this.bulletManager.enemyBullets) {
       const dist = this.distance(
         bullet.x,
@@ -641,8 +570,6 @@ export class Game {
         bullet.remove = true;
       }
     }
-
-    // 적과 플레이어 충돌 체크
     for (let enemy of this.enemies) {
       if (enemy.dead) continue;
       const dist = this.distance(
@@ -656,61 +583,63 @@ export class Game {
       }
     }
   }
-
   distance(x1, y1, x2, y2) {
     return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
   }
-
   addScore(value) {
     this.score = (this.score || 0) + value;
   }
-
   addGems(value) {
     this.gems = (this.gems || 0) + value;
   }
-
   setupOptionsModal() {
-    // Modal 인스턴스 생성
-    this.optionsModal = new Modal("optionsModal");
-
-    document.getElementById("applyBgColor").addEventListener("click", () => {
-      const color = document.getElementById("bgColorPicker").value;
-      this.customBgColor = color;
-    });
-
-    document.getElementById("spawnTestBullet").addEventListener("click", () => {
-      this.bulletManager.spawnPlayerBullet(this.player.x, this.player.y, 0, -1);
-    });
-
-    document.getElementById("simulateLevelUp").addEventListener("click", () => {
-      this.player.levelUp();
-    });
-
-    document.getElementById("spawnTestEnemy").addEventListener("click", () => {
-      const enemy = new Enemy(this, "normal");
-      enemy.x = this.player.x + 100 * (Math.random() - 0.5);
-      enemy.y = this.player.y - 100;
-      enemy.hp *= Math.pow(WaveSystem.DIFFICULTY_SCALE, this.wave - 1);
-      enemy.maxHp = enemy.hp;
-      this.enemies.push(enemy);
-    });
-
-    document.getElementById("closeOptions").addEventListener("click", () => {
-      this.optionsModal.close();
-    });
-
-    document.getElementById("debugButton").addEventListener("click", () => {
-      this.optionsModal.open();
-    });
+    document
+      .getElementById("applyBgColor")
+      .addEventListener("touchstart", () => {
+        const color = document.getElementById("bgColorPicker").value;
+        this.customBgColor = color;
+      });
+    document
+      .getElementById("spawnTestBullet")
+      .addEventListener("touchstart", () => {
+        this.bulletManager.spawnPlayerBullet(
+          this.player.x,
+          this.player.y,
+          0,
+          -1
+        );
+      });
+    document
+      .getElementById("simulateLevelUp")
+      .addEventListener("touchstart", () => {
+        this.player.levelUp();
+      });
+    document
+      .getElementById("spawnTestEnemy")
+      .addEventListener("touchstart", () => {
+        const enemy = new Enemy(this, "normal");
+        enemy.x = this.player.x + 100 * (Math.random() - 0.5);
+        enemy.y = this.player.y - 100;
+        enemy.hp *= Math.pow(WaveSystem.DIFFICULTY_SCALE, this.wave - 1);
+        enemy.maxHp = enemy.hp;
+        this.enemies.push(enemy);
+      });
+    document
+      .getElementById("closeOptions")
+      .addEventListener("touchstart", () => {
+        this.optionsModal.close();
+      });
+    document
+      .getElementById("debugButton")
+      .addEventListener("touchstart", () => {
+        this.optionsModal.open();
+      });
   }
-
   showBossQuote(bossData) {
     this.bossQuote = bossData;
-    this.bossQuoteTimer = 3; // 3초 동안 표시
+    this.bossQuoteTimer = 3;
   }
-
   restartGame() {
-    // 게임 상태 초기화
     this.state = GameState.PLAY;
     this.wave = 1;
     this.waveTimer = 0;
@@ -719,16 +648,27 @@ export class Game {
     this.waveClear = false;
     this.score = 0;
     this.gems = 0;
-
-    // 플레이어 초기화
     this.player = new Player(this);
-
-    // 적, 총알 초기화
     this.enemies = [];
     this.bulletManager.clear();
-
-    // 게임 루프 재시작
     this.lastTime = performance.now();
+    this.updateMobileControlsVisibility();
     requestAnimationFrame(this.gameLoop.bind(this));
+  }
+  updateMobileControlsVisibility() {
+    if (!this.skillSelectUI.isMobile) return;
+
+    const joystickArea = document.getElementById("joystickArea");
+    const qSkillBtn = document.getElementById("qSkillBtn");
+    const wSkillBtn = document.getElementById("wSkillBtn");
+
+    if (!joystickArea || !qSkillBtn || !wSkillBtn) return;
+
+    const shouldShow = this.state === GameState.PLAY;
+    const displayValue = shouldShow ? "block" : "none";
+
+    joystickArea.style.display = displayValue;
+    qSkillBtn.style.display = displayValue;
+    wSkillBtn.style.display = displayValue;
   }
 }

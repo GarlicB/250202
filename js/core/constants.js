@@ -1,4 +1,3 @@
-// 게임 상태 상수
 export const GameState = {
   TITLE: 0,
   PLAY: 1,
@@ -12,13 +11,11 @@ export const GameState = {
   LOBBY: 9,
 };
 
-// 최대값 상수
 export const MAX_PARTICLES = 100;
 export const MAX_EFFECTS = 50;
 export const MAX_BULLETS = 200;
 export const MAX_ENEMIES = 50;
 
-// 스토리 텍스트
 export const STORY_TEXT = [
   "2157년, 인류는 마침내 새로운 행성 '네오 테라'를 발견했다.",
   "그러나 이 행성에는 이미 고대 문명의 수호자들이 존재했고,",
@@ -28,7 +25,6 @@ export const STORY_TEXT = [
   "하지만 조심하라... 강력한 보스들이 당신을 기다리고 있다...",
 ];
 
-// 보스 대사
 export const BOSS_QUOTES = {
   5: {
     name: "크림슨 가디언",
@@ -48,7 +44,6 @@ export const BOSS_QUOTES = {
   },
 };
 
-// 아이템 타입
 export const ItemType = {
   COIN: "coin",
   GEM: "gem",
@@ -58,7 +53,6 @@ export const ItemType = {
   SHIELD: "shield",
 };
 
-// 스킬 타입
 export const SkillType = {
   REGEN_AURA: "regenAura",
   HOMING_LASER: "homingLaser",
@@ -66,7 +60,6 @@ export const SkillType = {
   METEOR_SHOWER: "meteorShower",
 };
 
-// 상점 아이템
 export const ShopItems = {
   HEALTH_UP: {
     id: "healthUp",
@@ -107,14 +100,12 @@ export const ShopItems = {
   },
 };
 
-// 웨이브 시스템
 export const WaveSystem = {
   WAVE_DURATION: 60,
   BOSS_WAVE_INTERVAL: 5,
   DIFFICULTY_SCALE: 1.1,
 };
 
-// 스킬 업그레이드
 export const SkillUpgrades = {
   ATTACK_DAMAGE: {
     id: "attackDamage",

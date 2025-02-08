@@ -1,6 +1,5 @@
 import { SkillType } from "../core/constants.js";
 
-// 스킬 클래스
 export class Skill {
   constructor(game, type) {
     this.game = game;
@@ -104,45 +103,32 @@ export class Skill {
     }
   }
   updateRegenAura(dt) {
-    // 힐링 효과
     if (this.game.player.hp < this.game.player.maxHp) {
       const healingAmount = this.healAmount * dt;
       this.game.player.hp = Math.min(
         this.game.player.hp + healingAmount,
         this.game.player.maxHp
       );
-
-      // 십자가 이펙트 (customDraw 사용)
       if (Math.random() < dt * 5) {
         this.crossFadeTimer = this.crossFadeDuration;
         this.drawHealingCross();
       }
-
-      // 십자가 페이드 아웃 업데이트
       if (this.crossFadeTimer > 0) {
         this.crossFadeTimer = Math.max(0, this.crossFadeTimer - dt);
         this.drawHealingCross();
       }
     }
-
-    // 보호막 파동 효과
     this.pulseTimer += dt;
     if (this.pulseTimer >= this.pulseInterval) {
       this.pulseTimer = 0;
-
-      // 원형 파동 생성 (개수 감소)
       for (let i = 0; i < 8; i++) {
         const angle = (i / 8) * Math.PI * 2;
         const x = this.game.player.x + Math.cos(angle) * this.range;
         const y = this.game.player.y + Math.sin(angle) * this.range;
-
-        // 메인 파동
         this.game.particleSystem.createExplosion(x, y, "#4f4", 2, {
           speed: 0,
           scale: 1.2,
         });
-
-        // 글로우 효과 (8개마다 1개)
         if (i % 8 === 0) {
           this.game.particleSystem.createExplosion(x, y, "#8f8", 1, {
             speed: 3,
@@ -150,8 +136,6 @@ export class Skill {
           });
         }
       }
-
-      // 중앙 폭발 효과 (개수 감소)
       for (let i = 0; i < 4; i++) {
         const angle = Math.random() * Math.PI * 2;
         const distance = this.range * 0.15;
@@ -167,8 +151,6 @@ export class Skill {
           }
         );
       }
-
-      // 보호막 효과 적용
       this.game.player.addShield(this.shieldAmount);
     }
   }
@@ -178,46 +160,31 @@ export class Skill {
     const y = this.game.player.y;
     const size = 30;
     const alpha = this.crossFadeTimer / this.crossFadeDuration;
-
     ctx.save();
     ctx.strokeStyle = `rgba(0, 255, 0, ${alpha})`;
     ctx.lineWidth = 3;
     ctx.beginPath();
-
-    // 수직선
     ctx.moveTo(x, y - size / 2);
     ctx.lineTo(x, y + size / 2);
-
-    // 수평선
     ctx.moveTo(x - size / 2, y);
     ctx.lineTo(x + size / 2, y);
-
     ctx.stroke();
     ctx.restore();
   }
   updateHomingLaser(dt) {
-    // 색상 변경 로직
     this.colorTimer += dt;
     if (this.colorTimer >= this.colorInterval) {
       this.colorTimer = 0;
       this.currentColorIndex =
         (this.currentColorIndex + 1) % this.colors.length;
     }
-
-    // 레이저 빔 발사
-    const angle = -Math.PI / 2; // 위쪽 방향
-    const beamLength = 2000; // 더 긴 빔 길이
-
-    // 레이저 빔 충돌 체크 및 데미지 처리
+    const angle = -Math.PI / 2;
+    const beamLength = 2000;
     for (let enemy of this.game.enemies) {
       if (enemy.dead) continue;
-
-      // x축 거리가 빔 너비의 절반 이내인지 확인
       const xDiff = Math.abs(enemy.x - this.game.player.x);
       if (xDiff <= this.beamWidth / 2 && enemy.y < this.game.player.y) {
-        enemy.takeDamage(this.damage * dt); // 지속 데미지
-
-        // 피격 이펙트 강화
+        enemy.takeDamage(this.damage * dt);
         for (let i = 0; i < 3; i++) {
           this.game.particleSystem.createExplosion(
             enemy.x + (Math.random() - 0.5) * this.beamWidth,
@@ -228,9 +195,6 @@ export class Skill {
         }
       }
     }
-
-    // 글로우 효과가 있는 레이저 빔
-    // 1. 글로우 레이어
     this.game.bulletManager.spawnPlayerBullet(
       this.game.player.x,
       this.game.player.y,
@@ -246,8 +210,6 @@ export class Skill {
         trailEffect: true,
       }
     );
-
-    // 2. 메인 레이저 빔
     this.game.bulletManager.spawnPlayerBullet(
       this.game.player.x,
       this.game.player.y,
@@ -263,8 +225,6 @@ export class Skill {
         trailEffect: true,
       }
     );
-
-    // 발사 지점 글로우 효과
     for (let i = 0; i < 5; i++) {
       this.game.particleSystem.createExplosion(
         this.game.player.x + (Math.random() - 0.5) * this.beamWidth * 2,
@@ -273,8 +233,6 @@ export class Skill {
         8
       );
     }
-
-    // 빔 경로를 따라 파티클 생성
     for (let i = 0; i < 8; i++) {
       const distance = Math.random() * beamLength;
       this.game.particleSystem.createExplosion(
@@ -296,7 +254,6 @@ export class Skill {
       slowEffect: this.slowEffect,
       slowDuration: this.slowDuration,
     };
-
     this.game.bulletManager.spawnPlayerBullet(
       this.game.player.x,
       this.game.player.y,
@@ -312,7 +269,6 @@ export class Skill {
         trailEffect: true,
       }
     );
-
     for (let i = 0; i < 5; i++) {
       const angle = startAngle + (Math.random() - 0.5) * 0.5;
       this.game.particleSystem.createExplosion(
@@ -331,7 +287,6 @@ export class Skill {
       const targetY = this.game.canvas.height + 50;
       const angle = Math.atan2(targetY - y, targetX - x);
       const speed = 300;
-
       this.game.bulletManager.spawnPlayerBullet(
         x,
         y,
@@ -350,7 +305,6 @@ export class Skill {
           trailEffect: true,
         }
       );
-
       for (let i = 0; i < 3; i++) {
         this.game.particleSystem.createTrail(x, y, {
           color: "#f66",
@@ -361,9 +315,7 @@ export class Skill {
     }
   }
   activate() {
-    // 쿨타임 제거 체크
-    const noCooldown = document.getElementById("removeSkillCooldown")?.checked;
-    if (noCooldown || this.cooldownTimer <= 0) {
+    if (this.cooldownTimer <= 0) {
       this.active = true;
       this.cooldownTimer = this.cooldown;
       this.durationTimer = this.duration;

@@ -8,8 +8,6 @@
 /* 스킬 버튼 스타일 */
 .skill-button {
   position: fixed;
-  top: 20px;
-  right: 20px;
   background: rgba(0, 0, 0, 0.6);
   border: 2px solid #ffd700;
   color: #ffd700;
@@ -21,7 +19,37 @@
   gap: 8px;
   cursor: pointer;
   transition: all 0.3s;
-  pointer-events: auto; /* 버튼은 터치 가능 */
+  pointer-events: auto;
+}
+
+/* 왼쪽 하단 스킬 버튼 */
+.skill-button-left {
+  bottom: 30px;
+  padding: 15px;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  justify-content: center;
+}
+
+#qSkillBtn {
+  left: 30px;
+}
+
+#wSkillBtn {
+  left: 110px;
+}
+
+/* 쿨다운 오버레이 */
+.cooldown-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: inherit;
+  display: none;
 }
 
 /* 조이스틱 스타일 */
@@ -216,13 +244,12 @@
   }
 
   .skill-button {
-    padding: 12px 20px;
     font-size: 16px;
   }
 
   #joystickArea {
     bottom: 30px;
-    left: 30px;
+    left: 200px;
   }
 }
 
@@ -486,4 +513,220 @@ canvas {
   transform: translate(-50%, -50%);
   text-align: center;
   z-index: 100;
+}
+
+/* 게임 시작 버튼 스타일 */
+#introControls {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000;
+  pointer-events: auto;
+}
+
+.game-button {
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffd700;
+  border: 2px solid #ffd700;
+  padding: 15px 30px;
+  font-size: 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  pointer-events: auto;
+}
+
+.game-button:hover {
+  background: rgba(255, 215, 0, 0.2);
+}
+
+/* 조이스틱 영역 */
+#joystickArea {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70%;
+  background: transparent;
+  touch-action: none;
+  z-index: 1000;
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #mobileControls {
+    display: block;
+  }
+
+  #joystickArea {
+    display: block;
+  }
+
+  .game-button {
+    font-size: 20px;
+    padding: 12px 24px;
+  }
+}
+
+/* 조이스틱 스타일 */
+#joystickBase {
+  position: fixed;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+  display: none;
+}
+
+#joystickHandle {
+  position: fixed;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+  display: none;
+}
+
+/* 모바일 스킬 선택 UI */
+.mobile-skill-select {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 20px;
+  border-radius: 15px;
+  width: 80%;
+  max-width: 400px;
+  z-index: 1000;
+}
+
+.mobile-skill-option {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-skill-option .skill-icon {
+  font-size: 24px;
+}
+
+.mobile-skill-option .skill-name {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.mobile-skill-option .skill-description {
+  font-size: 14px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.mobile-skill-option:active {
+  background: rgba(255, 215, 0, 0.3);
+}
+
+/* 모바일 상점 UI */
+.mobile-shop {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 20px;
+  border-radius: 15px;
+  width: 80%;
+  max-width: 400px;
+  z-index: 1000;
+}
+
+.mobile-shop-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-shop-item .item-icon {
+  font-size: 24px;
+}
+
+.mobile-shop-item .item-name {
+  flex: 1;
+  margin: 0 15px;
+  font-size: 16px;
+}
+
+.mobile-shop-item .item-cost {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.mobile-shop-item:active {
+  background: rgba(255, 215, 0, 0.3);
+}
+
+.mobile-shop-close {
+  width: 100%;
+  padding: 15px;
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.mobile-shop-close:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 차지 바 스타일 */
+.charge-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(to right, #ffd700, #ff6b6b);
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+.skill-button.charging {
+  background: rgba(255, 215, 0, 0.2);
+}
+
+/* 기본 스타일 */
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #000;
+  font-family: "Arial", sans-serif;
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
 }

@@ -5,7 +5,6 @@ export class EffectManager {
     this.game = game;
     this.effects = [];
   }
-
   update(dt) {
     this.effects = this.effects.filter((effect) => {
       effect.update(dt);
@@ -13,11 +12,9 @@ export class EffectManager {
     });
     if (this.effects.length > MAX_EFFECTS) this.effects.length = MAX_EFFECTS;
   }
-
   draw(ctx) {
     for (let effect of this.effects) effect.draw(ctx);
   }
-
   createHealEffect(x, y) {
     this.effects.push({
       x,
@@ -45,16 +42,15 @@ export class EffectManager {
       },
     });
   }
-
   createLightningEffect(x1, y1, x2, y2) {
     const segments = 5,
       points = [{ x: x1, y: y1 }];
     for (let i = 1; i < segments; i++) {
       const t = i / segments,
-        x = x1 + (x2 - x1) * t,
-        y = y1 + (y2 - y1) * t,
+        xx = x1 + (x2 - x1) * t,
+        yy = y1 + (y2 - y1) * t,
         offset = (Math.random() - 0.5) * 30;
-      points.push({ x: x + offset, y: y + offset });
+      points.push({ x: xx + offset, y: yy + offset });
     }
     points.push({ x: x2, y: y2 });
     this.effects.push({
@@ -83,7 +79,6 @@ export class EffectManager {
       },
     });
   }
-
   createMeteor(x, y, damage) {
     const targetX = x + (Math.random() - 0.5) * 100,
       targetY = this.game.canvas.height + 50;
